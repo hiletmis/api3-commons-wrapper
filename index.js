@@ -1,53 +1,15 @@
 
 import express from 'express';
 import cors from 'cors';
-import { postProcessApiCallResponse, preProcessApiCallParameters } from '@api3/commons/processing';
+import { errorHandler } from './helpers/error-handler.js';
+import router from './processing/processing.controller.js';
 
 const app = express();
 
 app.use(express.json({ limit: "1MB" }));
 app.use(cors());
 
-function errorHandler(err, req, res, next) {
-    if (typeof (err) === 'string') {
-        return res.status(400).json({ message: err });
-    }
-
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({ message: err.message });
-    }
-
-    return res.status(500).json({ message: err.message });
-}
-
-async function preProcess(body) {
-
-    const endpoint = body.endpoint;
-    const apiCallParameters = body.apiCallParameters;
-
-    return await preProcessApiCallParameters(endpoint, apiCallParameters);
-}
-
-async function postProcess(body) {
-
-    const apiCallResponse = body.apiCallResponse;
-    const endpoint = body.endpoint;
-    const apiCallParameters = body.apiCallParameters;
-
-    return await postProcessApiCallResponse(apiCallResponse, endpoint, apiCallParameters);
-}
-
-app.post('/post', async (req, res, next) => {
-    postProcess(req.body)
-        .then(function (result) { res.json(result) })
-        .catch(err => next(err));
-});
-
-app.post('/pre', async (req, res, next) => {
-    preProcess(req.body)
-        .then(function (result) { res.json(result) })
-        .catch(err => next(err));
-});
+app.use('/', router);
 
 app.use(errorHandler);
 
